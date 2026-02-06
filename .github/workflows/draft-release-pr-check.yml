@@ -1,22 +1,7 @@
 name: Release PR checks
 
 on:
-  #do checks on every PR update
-  pull_request:
-    branches:
-      - stable
-      - minor-next
-      - major-next
-      - "legacy/*"
-    paths:
-      - "src/VersionInfo.php"
-
-  #allow this workflow to be invoked on PR merge, prior to creating the release
-  workflow_call:
-    outputs:
-      valid:
-        description: Whether this commit is valid for release
-        value: ${{ jobs.check-intent.outputs.valid && jobs.check-validity.result == 'success' }}
+  workflow_dispatch:
 
 permissions:
   contents: read #for user access check
@@ -72,7 +57,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           require: write
-          username: ${{ github.event.pull_request.user.login }}
+          username: ${{ github.actor }}
           #technically this would be fine for dependabot but generally bots don't count as team members
           check-bot: true
 

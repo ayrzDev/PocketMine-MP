@@ -6,33 +6,10 @@
 name: Auto approve collaborator PRs
 
 on:
-  pull_request_target:
-    types:
-      - opened
-      - reopened
-      - ready_for_review
-      - synchronize
+  workflow_dispatch:
 
 jobs:
-  dispatch:
-    name: Request approval
+  disabled:
     runs-on: ubuntu-latest
-    if: '! github.event.pull_request.draft'
-
     steps:
-      - name: Generate access token
-        id: generate-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ vars.RESTRICTED_ACTIONS_DISPATCH_ID }}
-          private-key: ${{ secrets.RESTRICTED_ACTIONS_DISPATCH_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: RestrictedActions
-
-      - name: Dispatch restricted action
-        uses: peter-evans/repository-dispatch@v4
-        with:
-          token: ${{ steps.generate-token.outputs.token }}
-          repository: ${{ github.repository_owner }}/RestrictedActions
-          event-type: auto_approve_collaborator_pr
-          client-payload: '{"repo": "${{ github.repository }}", "pull_request_id": "${{ github.event.pull_request.number }}", "reviewer_id": "0" }'
+      - run: echo "Auto-approve disabled"

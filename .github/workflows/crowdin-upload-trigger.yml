@@ -1,13 +1,6 @@
 name: Upload translations to Crowdin
 
 on:
-  push:
-    paths:
-      - resources/translations/eng.ini
-    branches:
-      - stable
-      - minor-next
-      - major-next
   workflow_dispatch:
 
 jobs:

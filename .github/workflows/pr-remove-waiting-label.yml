@@ -1,8 +1,7 @@
 name: Remove waiting label from PRs
 
 on:
-  pull_request_target:
-    types: synchronize
+  workflow_dispatch:
 
 jobs:
   delabel:
