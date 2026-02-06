@@ -81,7 +81,7 @@ class Sapling extends Flowable{
 
 	public function onRandomTick() : void{
 		$world = $this->position->getWorld();
-		if($world->getFullLightAt($this->position->getFloorX(), $this->position->getFloorY(), $this->position->getFloorZ()) >= 8 && mt_rand(1, 7) === 1){
+		if(mt_rand(1, 7) === 1){
 			if($this->ready){
 				$this->grow(null);
 			}else{

@@ -55,29 +55,29 @@ class Grass extends Opaque{
 
 	public function onRandomTick() : void{
 		$world = $this->position->getWorld();
-		$lightAbove = $world->getFullLightAt($this->position->x, $this->position->y + 1, $this->position->z);
-		if($lightAbove < 4 && $world->getBlockAt($this->position->x, $this->position->y + 1, $this->position->z)->getLightFilter() >= 2){
-			//grass dies
+		$above = $world->getBlockAt($this->position->x, $this->position->y + 1, $this->position->z);
+		if($above->getLightFilter() >= 2){
+			//Kapalı topraklar yine de toprağa dönüşüyor...
 			BlockEventHelper::spread($this, VanillaBlocks::DIRT(), $this);
-		}elseif($lightAbove >= 9){
-			//try grass spread
-			for($i = 0; $i < 4; ++$i){
-				$x = mt_rand($this->position->x - 1, $this->position->x + 1);
-				$y = mt_rand($this->position->y - 3, $this->position->y + 1);
-				$z = mt_rand($this->position->z - 1, $this->position->z + 1);
+			return;
+		}
 
-				$b = $world->getBlockAt($x, $y, $z);
-				if(
-					!($b instanceof Dirt) ||
-					$b->getDirtType() !== DirtType::NORMAL ||
-					$world->getFullLightAt($x, $y + 1, $z) < 4 ||
-					$world->getBlockAt($x, $y + 1, $z)->getLightFilter() >= 2
-				){
-					continue;
-				}
+		//try grass spread
+		for($i = 0; $i < 4; ++$i){
+			$x = mt_rand($this->position->x - 1, $this->position->x + 1);
+			$y = mt_rand($this->position->y - 3, $this->position->y + 1);
+			$z = mt_rand($this->position->z - 1, $this->position->z + 1);
 
-				BlockEventHelper::spread($b, VanillaBlocks::GRASS(), $this);
+			$b = $world->getBlockAt($x, $y, $z);
+			if(
+				!($b instanceof Dirt) ||
+				$b->getDirtType() !== DirtType::NORMAL ||
+				$world->getBlockAt($x, $y + 1, $z)->getLightFilter() >= 2
+			){
+				continue;
 			}
+
+			BlockEventHelper::spread($b, VanillaBlocks::GRASS(), $this);
 		}
 	}
 
