@@ -29,6 +29,7 @@ use pocketmine\block\tile\Sign;
 use pocketmine\block\utils\SignText;
 use pocketmine\entity\Attribute;
 use pocketmine\entity\InvalidSkinException;
+use pocketmine\entity\Skin;
 use pocketmine\event\player\PlayerEditBookEvent;
 use pocketmine\inventory\transaction\action\DropItemAction;
 use pocketmine\inventory\transaction\InventoryTransaction;
@@ -99,6 +100,7 @@ use pocketmine\network\mcpe\protocol\types\PlayerAction;
 use pocketmine\network\mcpe\protocol\types\PlayerAuthInputFlags;
 use pocketmine\network\mcpe\protocol\types\PlayerBlockActionStopBreak;
 use pocketmine\network\mcpe\protocol\types\PlayerBlockActionWithBlockInfo;
+use pocketmine\network\mcpe\protocol\types\skin\SkinData as ProtocolSkinData;
 use pocketmine\network\PacketHandlingException;
 use pocketmine\player\Player;
 use pocketmine\utils\AssumptionFailedError;
@@ -907,13 +909,9 @@ class InGamePacketHandler extends PacketHandler
 		if ($packet->skin->getFullSkinId() === $this->lastRequestedFullSkinId) {
 			//TODO: HACK! In 1.19.60, the client sends its skin back to us if we sent it a skin different from the one
 			//it's using. We need to prevent this from causing a feedback loop.
-			//Some clients may reuse fullSkinId across different edits, so only refuse if payload matches current skin.
-			$currentSkin = $this->player->getSkin();
-			if (
-				$packet->skin->getSkinImage()->getData() === $currentSkin->getSkinData() &&
-				$packet->skin->getCapeImage()->getData() === $currentSkin->getCapeData() &&
-				$packet->skin->getGeometryData() === $currentSkin->getGeometryData()
-			) {
+			//Some clients may reuse fullSkinId across different edits, so only refuse exact packet echoes.
+			$currentRawSkin = $this->player->getPlayerInfo()->getRawSkinData();
+			if ($currentRawSkin !== null && $this->isSameSkinData($packet->skin, $currentRawSkin)) {
 				$this->session->getLogger()->debug("Refused duplicate skin change request");
 				return true;
 			}
@@ -957,6 +955,32 @@ class InGamePacketHandler extends PacketHandler
 			$this->session->getLogger()->warning("Unexpected error while processing skin data for " . $this->player->getName() . ": " . $e->getMessage());
 		}
 		return $this->player->changeSkin($skin, $packet->newSkinName, $packet->oldSkinName);
+	}
+
+	private function isSameSkinData(ProtocolSkinData $a, ProtocolSkinData $b): bool
+	{
+		return
+			$a->getSkinId() === $b->getSkinId() &&
+			$a->getPlayFabId() === $b->getPlayFabId() &&
+			$a->getResourcePatch() === $b->getResourcePatch() &&
+			$a->getSkinImage()->getData() === $b->getSkinImage()->getData() &&
+			$a->getCapeImage()->getData() === $b->getCapeImage()->getData() &&
+			$a->getGeometryData() === $b->getGeometryData() &&
+			$a->getGeometryDataEngineVersion() === $b->getGeometryDataEngineVersion() &&
+			$a->getAnimationData() === $b->getAnimationData() &&
+			$a->getCapeId() === $b->getCapeId() &&
+			$a->getFullSkinId() === $b->getFullSkinId() &&
+			$a->getArmSize() === $b->getArmSize() &&
+			$a->getSkinColor() === $b->getSkinColor() &&
+			$a->isPersona() === $b->isPersona() &&
+			$a->isPremium() === $b->isPremium() &&
+			$a->isPersonaCapeOnClassic() === $b->isPersonaCapeOnClassic() &&
+			$a->isPrimaryUser() === $b->isPrimaryUser() &&
+			$a->isOverride() === $b->isOverride() &&
+			$a->isVerified() === $b->isVerified() &&
+			$a->getAnimations() == $b->getAnimations() &&
+			$a->getPersonaPieces() == $b->getPersonaPieces() &&
+			$a->getPieceTintColors() == $b->getPieceTintColors();
 	}
 
 
