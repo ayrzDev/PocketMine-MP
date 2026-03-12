@@ -948,6 +948,7 @@ class InGamePacketHandler extends PacketHandler
 		return $this->player->changeSkin($skin, $packet->newSkinName, $packet->oldSkinName);
 	}
 
+
 	public function handleSubClientLogin(SubClientLoginPacket $packet): bool
 	{
 		return false; //TODO
