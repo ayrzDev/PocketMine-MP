@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace pocketmine\entity;
 
+use Ahc\Json\Comment as CommentedJsonDecoder;
 use pocketmine\data\bedrock\item\SavedItemStackData;
 use pocketmine\data\SavedDataLoadingException;
 use pocketmine\entity\animation\TotemUseAnimation;
@@ -172,7 +173,7 @@ class Human extends Living implements ProjectileSource, InventoryHolder{
 			try {
 				$playerInfo = $this->getPlayerInfo();
 				$skinData = $playerInfo->getRawSkinData();
-				if ($skinData !== null && !$this->skinDataMatchesCurrentSkin($skinData)) {
+				if ($skinData !== null && !$skinData->isPersona() && !$this->skinDataMatchesCurrentSkin($skinData)) {
 					$skinData = TypeConverter::getInstance()->getSkinAdapter()->toSkinData($this->skin);
 					$playerInfo->setRawSkinData($skinData, false);
 				}
@@ -207,7 +208,15 @@ class Human extends Living implements ProjectileSource, InventoryHolder{
 			return false;
 		}
 		if ($skinData->getGeometryData() !== $this->skin->getGeometryData()) {
-			return false;
+			try {
+				$incomingGeometry = (new CommentedJsonDecoder())->decode($skinData->getGeometryData());
+				$currentGeometry = (new CommentedJsonDecoder())->decode($this->skin->getGeometryData());
+				if ($incomingGeometry != $currentGeometry) {
+					return false;
+				}
+			} catch (\RuntimeException) {
+				return false;
+			}
 		}
 		if ($skinData->getFullSkinId() !== $this->skin->getFullSkinId()) {
 			return false;
