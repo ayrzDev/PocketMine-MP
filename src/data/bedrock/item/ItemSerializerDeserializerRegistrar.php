@@ -345,6 +345,9 @@ final class ItemSerializerDeserializerRegistrar{
 		$this->map1to1Item(Ids::NETHERITE_AXE, Items::NETHERITE_AXE());
 		$this->map1to1Item(Ids::NETHERITE_BOOTS, Items::NETHERITE_BOOTS());
 		$this->map1to1Item(Ids::NETHERITE_CHESTPLATE, Items::NETHERITE_CHESTPLATE());
+
+		$this->map1to1Item(Ids::ELYTRA, Items::ELYTRA());
+
 		$this->map1to1Item(Ids::NETHERITE_HELMET, Items::NETHERITE_HELMET());
 		$this->map1to1Item(Ids::NETHERITE_HOE, Items::NETHERITE_HOE());
 		$this->map1to1Item(Ids::NETHERITE_INGOT, Items::NETHERITE_INGOT());

@@ -362,6 +362,7 @@ final class ItemTypeIds{
 
 	public const FIRST_UNUSED_ITEM_ID = 20323;
 
+	public const ELYTRA = 20324;
 	private static int $nextDynamicId = self::FIRST_UNUSED_ITEM_ID;
 
 	/**
