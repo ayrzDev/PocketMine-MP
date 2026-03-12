@@ -922,6 +922,17 @@ class InGamePacketHandler extends PacketHandler
 		try {
 			$skin = $this->session->getTypeConverter()->getSkinAdapter()->fromSkinData($packet->skin);
 		} catch (InvalidSkinException $e) {
+			if ($packet->skin->isPersona()) {
+				$this->session->getLogger()->debug("Accepted persona skin update without legacy conversion: " . $e->getMessage());
+				try {
+					$this->player->getPlayerInfo()->setRawSkinData($packet->skin);
+				} catch (\Throwable $setRawSkinError) {
+					$this->session->getLogger()->debug("Failed to update raw persona skin data for " . $this->player->getName() . ": " . $setRawSkinError->getMessage());
+					return true;
+				}
+				$this->player->sendSkin($this->player->getServer()->getOnlinePlayers());
+				return true;
+			}
 			throw PacketHandlingException::wrap($e, "Invalid skin in PlayerSkinPacket");
 		}
 
@@ -933,7 +944,11 @@ class InGamePacketHandler extends PacketHandler
 
 		try {
 			$skinData = $skin->getSkinData();
-			if (strlen($skinData) > 0 && strspn($skinData, "\x00") === strlen($skinData)) {
+			if (
+				!$packet->skin->isPersona() &&
+				strlen($skinData) > 0 &&
+				strspn($skinData, "\x00") === strlen($skinData)
+			) {
 				$oldSkin = $this->player->getSkin();
 				try {
 					$skin = new Skin(

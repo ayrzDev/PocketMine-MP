@@ -43,6 +43,7 @@ class LegacySkinAdapter implements SkinAdapter
 		$capeImage = $capeData === "" ? new SkinImage(0, 0, "") : new SkinImage(32, 64, $capeData);
 		$skinData = $skin->getSkinData();
 		$skinImage = match (strlen($skinData)) {
+			1 * 1 * 4 => new SkinImage(1, 1, $skinData),
 			64 * 32 * 4 => new SkinImage(32, 64, $skinData),
 			64 * 64 * 4 => new SkinImage(64, 64, $skinData),
 			128 * 128 * 4 => new SkinImage(128, 128, $skinData),
