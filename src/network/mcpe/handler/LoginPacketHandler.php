@@ -158,18 +158,19 @@ class LoginPacketHandler extends PacketHandler{
 		return true;
 	}
 
-	private function processLoginCommon(LoginPacket $packet, string $username, UuidInterface $legacyUuid, string $xuid) : ?bool{
-		if(!Player::isValidUserName($username)){
+	private function processLoginCommon(LoginPacket $packet, string $username, UuidInterface $legacyUuid, string $xuid): ?bool
+	{
+		if (!Player::isValidUserName($username)) {
 			$this->session->disconnectWithError(KnownTranslationFactory::disconnectionScreen_invalidName());
 
 			return null;
 		}
 
 		$clientData = $this->parseClientData($packet->clientDataJwt);
-
-		try{
-			$skin = $this->session->getTypeConverter()->getSkinAdapter()->fromSkinData(ClientDataToSkinDataHelper::fromClientData($clientData));
-		}catch(\InvalidArgumentException | InvalidSkinException $e){
+		$protoSkinData = ClientDataToSkinDataHelper::fromClientData($clientData);
+		try {
+			$skin = $this->session->getTypeConverter()->getSkinAdapter()->fromSkinData($protoSkinData);
+		} catch (\InvalidArgumentException | InvalidSkinException $e) {
 			$this->session->disconnectWithError(
 				reason: "Invalid skin: " . $e->getMessage(),
 				disconnectScreenMessage: KnownTranslationFactory::disconnectionScreen_invalidSkin()
@@ -178,22 +179,24 @@ class LoginPacketHandler extends PacketHandler{
 			return null;
 		}
 
-		if($xuid !== ""){
+		if ($xuid !== "") {
 			$playerInfo = new XboxLivePlayerInfo(
 				$xuid,
 				$username,
 				$legacyUuid,
 				$skin,
 				$clientData->LanguageCode,
-				(array) $clientData
+				(array) $clientData,
+				$protoSkinData
 			);
-		}else{
+		} else {
 			$playerInfo = new PlayerInfo(
 				$username,
 				$legacyUuid,
 				$skin,
 				$clientData->LanguageCode,
-				(array) $clientData
+				(array) $clientData,
+				$protoSkinData
 			);
 		}
 		($this->playerInfoConsumer)($playerInfo);
@@ -204,27 +207,27 @@ class LoginPacketHandler extends PacketHandler{
 			$this->session->getPort(),
 			$this->server->requiresAuthentication()
 		);
-		if($this->server->getNetwork()->getValidConnectionCount() > $this->server->getMaxPlayers()){
+		if ($this->server->getNetwork()->getValidConnectionCount() > $this->server->getMaxPlayers()) {
 			$ev->setKickFlag(PlayerPreLoginEvent::KICK_FLAG_SERVER_FULL, KnownTranslationFactory::disconnectionScreen_serverFull());
 		}
-		if(!$this->server->isWhitelisted($playerInfo->getUsername())){
+		if (!$this->server->isWhitelisted($playerInfo->getUsername())) {
 			$ev->setKickFlag(PlayerPreLoginEvent::KICK_FLAG_SERVER_WHITELISTED, KnownTranslationFactory::pocketmine_disconnect_whitelisted());
 		}
 
 		$banMessage = null;
-		if(($banEntry = $this->server->getNameBans()->getEntry($playerInfo->getUsername())) !== null){
+		if (($banEntry = $this->server->getNameBans()->getEntry($playerInfo->getUsername())) !== null) {
 			$banReason = $banEntry->getReason();
 			$banMessage = $banReason === "" ? KnownTranslationFactory::pocketmine_disconnect_ban_noReason() : KnownTranslationFactory::pocketmine_disconnect_ban($banReason);
-		}elseif(($banEntry = $this->server->getIPBans()->getEntry($this->session->getIp())) !== null){
+		} elseif (($banEntry = $this->server->getIPBans()->getEntry($this->session->getIp())) !== null) {
 			$banReason = $banEntry->getReason();
 			$banMessage = KnownTranslationFactory::pocketmine_disconnect_ban($banReason !== "" ? $banReason : KnownTranslationFactory::pocketmine_disconnect_ban_ip());
 		}
-		if($banMessage !== null){
+		if ($banMessage !== null) {
 			$ev->setKickFlag(PlayerPreLoginEvent::KICK_FLAG_BANNED, $banMessage);
 		}
 
 		$ev->call();
-		if(!$ev->isAllowed()){
+		if (!$ev->isAllowed()) {
 			$this->session->disconnect($ev->getFinalDisconnectReason(), $ev->getFinalDisconnectScreenMessage());
 			return null;
 		}
