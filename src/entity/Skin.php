@@ -77,18 +77,17 @@ final class Skin
 		if ($geometryData !== "") {
 			try {
 				$decodedGeometry = (new CommentedJsonDecoder())->decode($geometryData);
-			} catch (\RuntimeException $e) {
+				/*
+				 * Hack to cut down on network overhead due to skins, by un-pretty-printing geometry JSON.
+				 *
+				 * Mojang, some stupid reason, send every single model for every single skin in the selected skin-pack.
+				 * Not only that, they are pretty-printed.
+				 * TODO: find out what model crap can be safely dropped from the packet (unless it gets fixed first)
+				 */
+				$geometryData = json_encode($decodedGeometry, JSON_THROW_ON_ERROR);
+			} catch (\RuntimeException | \JsonException $e) {
 				throw new InvalidSkinException("Invalid geometry data: " . $e->getMessage(), 0, $e);
 			}
-
-			/*
-			 * Hack to cut down on network overhead due to skins, by un-pretty-printing geometry JSON.
-			 *
-			 * Mojang, some stupid reason, send every single model for every single skin in the selected skin-pack.
-			 * Not only that, they are pretty-printed.
-			 * TODO: find out what model crap can be safely dropped from the packet (unless it gets fixed first)
-			 */
-			$geometryData = json_encode($decodedGeometry, JSON_THROW_ON_ERROR);
 		}
 
 		$this->skinId = $skinId;

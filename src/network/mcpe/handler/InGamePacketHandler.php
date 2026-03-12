@@ -907,8 +907,16 @@ class InGamePacketHandler extends PacketHandler
 		if ($packet->skin->getFullSkinId() === $this->lastRequestedFullSkinId) {
 			//TODO: HACK! In 1.19.60, the client sends its skin back to us if we sent it a skin different from the one
 			//it's using. We need to prevent this from causing a feedback loop.
-			$this->session->getLogger()->debug("Refused duplicate skin change request");
-			return true;
+			//Some clients may reuse fullSkinId across different edits, so only refuse if payload matches current skin.
+			$currentSkin = $this->player->getSkin();
+			if (
+				$packet->skin->getSkinImage()->getData() === $currentSkin->getSkinData() &&
+				$packet->skin->getCapeImage()->getData() === $currentSkin->getCapeData() &&
+				$packet->skin->getGeometryData() === $currentSkin->getGeometryData()
+			) {
+				$this->session->getLogger()->debug("Refused duplicate skin change request");
+				return true;
+			}
 		}
 		$this->lastRequestedFullSkinId = $packet->skin->getFullSkinId();
 
@@ -935,7 +943,10 @@ class InGamePacketHandler extends PacketHandler
 						$oldSkin->getSkinData(),
 						$oldSkin->getCapeData(),
 						$skin->getGeometryName(),
-						$skin->getGeometryData()
+						$skin->getGeometryData(),
+						$skin->getFullSkinId(),
+						$skin->getArmSize(),
+						$skin->getSkinColor()
 					);
 				} catch (\Throwable $e) {
 					$this->session->getLogger()->warning("Failed to merge geometry into existing skin for " . $this->player->getName() . ": " . $e->getMessage());

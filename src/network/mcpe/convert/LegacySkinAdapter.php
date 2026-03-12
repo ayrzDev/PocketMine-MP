@@ -31,8 +31,6 @@ use function is_array;
 use function is_string;
 use function json_decode;
 use function json_encode;
-use function random_bytes;
-use function str_repeat;
 use const JSON_THROW_ON_ERROR;
 
 class LegacySkinAdapter implements SkinAdapter
@@ -53,16 +51,15 @@ class LegacySkinAdapter implements SkinAdapter
 			SkinImage::fromLegacy($skin->getSkinData()),
 			[],
 			$capeImage,
-			$skin->getGeometryData()
+			$skin->getGeometryData(),
+			fullSkinId: $skin->getFullSkinId(),
+			armSize: $skin->getArmSize(),
+			skinColor: $skin->getSkinColor()
 		);
 	}
 
 	public function fromSkinData(SkinData $data): Skin
 	{
-		if ($data->isPersona()) {
-			return new Skin("Standard_Custom", str_repeat(random_bytes(3) . "\xff", 4096));
-		}
-
 		$capeData = $data->isPersonaCapeOnClassic() ? "" : $data->getCapeImage()->getData();
 
 		$resourcePatch = json_decode($data->getResourcePatch(), true);
@@ -72,6 +69,15 @@ class LegacySkinAdapter implements SkinAdapter
 			throw new InvalidSkinException("Missing geometry name field");
 		}
 
-		return new Skin($data->getSkinId(), $data->getSkinImage()->getData(), $capeData, $geometryName, $data->getGeometryData());
+		return new Skin(
+			$data->getSkinId(),
+			$data->getSkinImage()->getData(),
+			$capeData,
+			$geometryName,
+			$data->getGeometryData(),
+			$data->getFullSkinId(),
+			$data->getArmSize(),
+			$data->getSkinColor()
+		);
 	}
 }
