@@ -43,7 +43,9 @@ class PlayerInfo{
 		private UuidInterface $uuid,
 		private Skin $skin,
 		private string $locale,
-		private array $extraData = []
+		private array $extraData = [],
+		private ?SkinData $rawSkinData = null
+
 	){
 		$this->username = TextFormat::clean($username);
 		$this->baseRawSkinData = $this->rawSkinData;
