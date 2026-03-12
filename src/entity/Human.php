@@ -68,6 +68,7 @@ use pocketmine\network\mcpe\protocol\types\PlayerPermissions;
 use pocketmine\network\mcpe\protocol\UpdateAbilitiesPacket;
 use pocketmine\player\Player;
 use pocketmine\world\sound\TotemUseSound;
+use pocketmine\network\mcpe\protocol\types\skin\SkinData as ProtocolSkinData;
 use pocketmine\world\World;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -164,19 +165,60 @@ class Human extends Living implements ProjectileSource, InventoryHolder{
 	 *
 	 * @param Player[]|null $targets
 	 */
-	public function sendSkin(?array $targets = null) : void{
-		NetworkBroadcastUtils::broadcastPackets($targets ?? $this->hasSpawned, [
-			PlayerSkinPacket::create($this->getUniqueId(), "", "", TypeConverter::getInstance()->getSkinAdapter()->toSkinData($this->skin))
+	public function sendSkin(?array $targets = null): void
+	{
+		$skinData = null;
+		if ($this instanceof Player) {
+			try {
+				$playerInfo = $this->getPlayerInfo();
+				$skinData = $playerInfo->getRawSkinData();
+				if ($skinData !== null && !$this->skinDataMatchesCurrentSkin($skinData)) {
+					$skinData = TypeConverter::getInstance()->getSkinAdapter()->toSkinData($this->skin);
+					$playerInfo->setRawSkinData($skinData, false);
+				}
+			} catch (\Throwable $e) {
+				$skinData = null;
+			}
+		}
+		if ($skinData === null) {
+			$skinData = TypeConverter::getInstance()->getSkinAdapter()->toSkinData($this->skin);
+		}
+				NetworkBroadcastUtils::broadcastPackets($targets ?? $this->hasSpawned, [
+				PlayerSkinPacket::create($this->getUniqueId(), "", "", $skinData)
 		]);
 	}
 
-	public function jump() : void{
+	public function jump(): void
+	{
 		parent::jump();
-		if($this->isSprinting()){
+		if ($this->isSprinting()) {
 			$this->hungerManager->exhaust(0.2, PlayerExhaustEvent::CAUSE_SPRINT_JUMPING);
-		}else{
+		} else {
 			$this->hungerManager->exhaust(0.05, PlayerExhaustEvent::CAUSE_JUMPING);
 		}
+	}
+
+	private function skinDataMatchesCurrentSkin(ProtocolSkinData $skinData): bool
+	{
+		if ($skinData->getSkinImage()->getData() !== $this->skin->getSkinData()) {
+			return false;
+		}
+		if ($skinData->getCapeImage()->getData() !== $this->skin->getCapeData()) {
+			return false;
+		}
+		if ($skinData->getGeometryData() !== $this->skin->getGeometryData()) {
+			return false;
+		}
+		if ($skinData->getFullSkinId() !== $this->skin->getFullSkinId()) {
+			return false;
+		}
+		if ($skinData->getArmSize() !== $this->skin->getArmSize()) {
+			return false;
+		}
+		if ($skinData->getSkinColor() !== $this->skin->getSkinColor()) {
+			return false;
+		}
+		return true;
 	}
 
 	public function emote(string $emoteId) : void{
@@ -495,8 +537,15 @@ class Human extends Living implements ProjectileSource, InventoryHolder{
 	protected function sendSpawnPacket(Player $player) : void{
 		$networkSession = $player->getNetworkSession();
 		$typeConverter = $networkSession->getTypeConverter();
-		if(!($this instanceof Player)){
-			$networkSession->sendDataPacket(PlayerListPacket::add([PlayerListEntry::createAdditionEntry($this->uuid, $this->id, $this->getName(), $typeConverter->getSkinAdapter()->toSkinData($this->skin))]));
+		$skinData = null;
+		if ($this instanceof Player) {
+			$skinData = $this->getPlayerInfo()->getRawSkinData();
+		}
+		if ($skinData === null) {
+			$skinData = $typeConverter->getSkinAdapter()->toSkinData($this->skin);
+		}
+		if (!($this instanceof Player)) {
+			$networkSession->sendDataPacket(PlayerListPacket::add([PlayerListEntry::createAdditionEntry($this->uuid, $this->id, $this->getName(), $skinData)]));
 		}
 
 		$networkSession->sendDataPacket(AddPlayerPacket::create(

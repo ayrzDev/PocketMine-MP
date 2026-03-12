@@ -26,11 +26,14 @@ namespace pocketmine\player;
 use pocketmine\entity\Skin;
 use pocketmine\utils\TextFormat;
 use Ramsey\Uuid\UuidInterface;
-
+use pocketmine\network\mcpe\protocol\types\skin\SkinData;
 /**
  * Encapsulates data needed to create a player.
  */
 class PlayerInfo{
+
+	private ?SkinData $baseRawSkinData = null;
+
 	/**
 	 * @param mixed[] $extraData
 	 * @phpstan-param array<string, mixed> $extraData
@@ -43,8 +46,10 @@ class PlayerInfo{
 		private array $extraData = []
 	){
 		$this->username = TextFormat::clean($username);
+		$this->baseRawSkinData = $this->rawSkinData;
 	}
 
+	
 	public function getUsername() : string{
 		return $this->username;
 	}
@@ -68,4 +73,29 @@ class PlayerInfo{
 	public function getExtraData() : array{
 		return $this->extraData;
 	}
+
+	public function getRawSkinData(): ?SkinData
+	{
+		return $this->rawSkinData;
+	}
+
+	public function getBaseRawSkinData(): ?SkinData
+	{
+		return $this->baseRawSkinData;
+	}
+
+	public function setRawSkinData(?SkinData $data, bool $overwriteBase = true): void
+	{
+		$this->rawSkinData = $data;
+		if($overwriteBase){
+			$this->baseRawSkinData = $data;
+		}
+	}
+
+	public function restoreBaseRawSkinData(): void
+	{
+		$this->rawSkinData = $this->baseRawSkinData;
+	}
+
+
 }
